@@ -22,13 +22,13 @@ func main() {
 	defer conn.Close()
 	client := pb.NewMovieClient(conn)
 
-	// runGetMovies(client)
+	runGetMovies(client)
 	// runGetMovie(client, "1")
 	// runCreateMovie(client, "24325645", "Spiderman Spiderverse",
 	// 	"Stan", "Lee")
 	// runUpdateMovie(client, "98498081", "24325645", "Spiderman Spiderverse",
 	// 	"Peter", "Parker")
-	runDeleteMovie(client, "98498081")
+	// runDeleteMovie(client, "98498081")
 }
 
 func runGetMovies(client pb.MovieClient) {

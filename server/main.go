@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	pb "moviesapp.com/grpc/protos"
+	"moviesapp.com/grpc/server/pkg/models"
 	"net"
 	"strconv"
 )
@@ -14,15 +15,11 @@ const (
 	port = ":50051"
 )
 
-var movies []*pb.MovieInfo
-
 type movieServer struct {
 	pb.UnimplementedMovieServer
 }
 
 func main() {
-	initMovies()
-
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -37,42 +34,28 @@ func main() {
 	}
 }
 
-func initMovies() {
-	movie1 := &pb.MovieInfo{Id: "1", Isbn: "0593310438",
-		Title: "The Batman", Director: &pb.Director{
-			Firstname: "Matt", Lastname: "Reeves"}}
-	movie2 := &pb.MovieInfo{Id: "2", Isbn: "3430220302",
-		Title: "Doctor Strange in the Multiverse of Madness",
-		Director: &pb.Director{Firstname: "Sam",
-			Lastname: "Raimi"}}
-
-	movies = append(movies, movie1)
-	movies = append(movies, movie2)
-}
-
 func (s *movieServer) GetMovies(in *pb.Empty,
 	stream pb.Movie_GetMoviesServer) error {
 	log.Printf("Received: %v", in)
+	movies := models.GetMovies()
 	for _, movie := range movies {
-		if err := stream.Send(movie); err != nil {
+		if err := stream.Send(&pb.MovieInfo{Id: movie.Id, Isbn: movie.Isbn, Title: movie.Title}); err != nil {
 			return err
 		}
 	}
 	return nil
+
 }
 
 func (s *movieServer) GetMovie(ctx context.Context,
 	in *pb.Id) (*pb.MovieInfo, error) {
 	log.Printf("Received: %v", in)
 
-	res := &pb.MovieInfo{}
+	ID := in.GetValue()
 
-	for _, movie := range movies {
-		if movie.GetId() == in.GetValue() {
-			res = movie
-			break
-		}
-	}
+	movieDetails, _ := models.GetMovieById(ID)
+
+	res := &pb.MovieInfo{Id: movieDetails.Id, Isbn: movieDetails.Isbn, Title: movieDetails.Title}
 
 	return res, nil
 }
@@ -80,27 +63,38 @@ func (s *movieServer) GetMovie(ctx context.Context,
 func (s *movieServer) CreateMovie(ctx context.Context,
 	in *pb.MovieInfo) (*pb.Id, error) {
 	log.Printf("Received: %v", in)
-	res := pb.Id{}
-	res.Value = strconv.Itoa(rand.Intn(100000000))
-	in.Id = res.GetValue()
-	movies = append(movies, in)
-	return &res, nil
+
+	ID := pb.Id{}
+	ID.Value = strconv.Itoa(rand.Intn(100000000))
+
+	newMovie := &models.Movie{Id: ID.Value, Isbn: in.GetIsbn(), Title: in.GetTitle()}
+
+	newMovie.CreateMovie()
+
+	return &ID, nil
 }
 
 func (s *movieServer) UpdateMovie(ctx context.Context,
 	in *pb.MovieInfo) (*pb.Status, error) {
 	log.Printf("Received: %v", in)
 
-	res := pb.Status{}
-	for index, movie := range movies {
-		if movie.GetId() == in.GetId() {
-			movies = append(movies[:index], movies[index+1:]...)
-			in.Id = movie.GetId()
-			movies = append(movies, in)
-			res.Value = 1
-			break
-		}
+	ID := in.GetId()
+
+	movieDetails, db := models.GetMovieById(ID)
+
+	// we are checking for updated fields from user and replace this fields in moviesDetails
+	if in.GetIsbn() != "" {
+		movieDetails.Isbn = in.GetIsbn()
 	}
+	if in.GetTitle() != "" {
+		movieDetails.Title = in.GetTitle()
+	}
+
+	db.Save(&movieDetails)
+
+	res := pb.Status{}
+
+	res.Value = 1
 
 	return &res, nil
 }
@@ -110,13 +104,12 @@ func (s *movieServer) DeleteMovie(ctx context.Context,
 	log.Printf("Received: %v", in)
 
 	res := pb.Status{}
-	for index, movie := range movies {
-		if movie.GetId() == in.GetValue() {
-			movies = append(movies[:index], movies[index+1:]...)
-			res.Value = 1
-			break
-		}
-	}
+
+	ID := in.GetValue()
+
+	models.DeleteMovie(ID)
+
+	res.Value = 1
 
 	return &res, nil
 }
