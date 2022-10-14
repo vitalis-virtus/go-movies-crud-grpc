@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc"
 	"log"
 	"math/rand"
-	pb "moviesapp.com/grpc/protos"
-	"moviesapp.com/grpc/server/pkg/models"
 	"net"
 	"strconv"
+
+	"google.golang.org/grpc"
+	pb "moviesapp.com/grpc/protos"
+	"moviesapp.com/grpc/server/pkg/models"
 )
 
 const (
@@ -90,7 +91,9 @@ func (s *movieServer) UpdateMovie(ctx context.Context,
 		movieDetails.Title = in.GetTitle()
 	}
 
-	db.Save(&movieDetails)
+	movieDetails.Id = ID
+
+	db.Save(movieDetails)
 
 	res := pb.Status{}
 

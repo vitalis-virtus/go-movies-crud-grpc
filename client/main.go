@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc"
 	"io"
 	"log"
-	pb "moviesapp.com/grpc/protos"
 	"time"
+
+	"google.golang.org/grpc"
+	pb "moviesapp.com/grpc/protos"
 )
 
 const (
@@ -22,13 +23,16 @@ func main() {
 	defer conn.Close()
 	client := pb.NewMovieClient(conn)
 
+	//19727887 bat
+	// 98498081 spider
+
+	// runGetMovie(client, "19727887")
+	// runCreateMovie(client, "isbn", "Batman")
+	// runUpdateMovie(client, "19727887", "isbn2", "Dark Knight")
 	runGetMovies(client)
-	// runGetMovie(client, "1")
-	// runCreateMovie(client, "24325645", "Spiderman Spiderverse",
-	// 	"Stan", "Lee")
-	// runUpdateMovie(client, "98498081", "24325645", "Spiderman Spiderverse",
-	// 	"Peter", "Parker")
-	// runDeleteMovie(client, "98498081")
+	runDeleteMovie(client, "19727887")
+	runGetMovies(client)
+
 }
 
 func runGetMovies(client pb.MovieClient) {
@@ -63,12 +67,10 @@ func runGetMovie(client pb.MovieClient, movieid string) {
 }
 
 func runCreateMovie(client pb.MovieClient, isbn string,
-	title string, firstname string, lastname string) {
+	title string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	req := &pb.MovieInfo{Isbn: isbn, Title: title,
-		Director: &pb.Director{Firstname: firstname,
-			Lastname: lastname}}
+	req := &pb.MovieInfo{Isbn: isbn, Title: title}
 	res, err := client.CreateMovie(ctx, req)
 	if err != nil {
 		log.Fatalf("%v.CreateMovie(_) = _, %v", client, err)
@@ -82,12 +84,11 @@ func runCreateMovie(client pb.MovieClient, isbn string,
 }
 
 func runUpdateMovie(client pb.MovieClient, movieid string,
-	isbn string, title string, firstname string, lastname string) {
+	isbn string, title string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	req := &pb.MovieInfo{Id: movieid, Isbn: isbn,
-		Title: title, Director: &pb.Director{
-			Firstname: firstname, Lastname: lastname}}
+		Title: title}
 	res, err := client.UpdateMovie(ctx, req)
 	if err != nil {
 		log.Fatalf("%v.UpdateMovie(_) = _, %v", client, err)
