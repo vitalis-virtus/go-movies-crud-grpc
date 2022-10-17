@@ -3,6 +3,9 @@ package models
 // models package-
 
 import (
+	"log"
+	"strconv"
+
 	"github.com/jinzhu/gorm"
 	"moviesapp.com/grpc/server/pkg/config"
 )
@@ -24,9 +27,13 @@ func init() {
 
 // create new movie in db
 func (m *Movie) CreateMovie() *Movie {
-	db.NewRecord(m)
+	log.Println("movie in models: ", m)
 	db.Create(&m)
 	return m
+}
+
+func (m *Movie) GetMovieId() string {
+	return strconv.FormatUint(uint64(m.ID), 10)
 }
 
 // get all movies in db

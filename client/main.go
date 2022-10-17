@@ -26,11 +26,13 @@ func main() {
 	//19727887 bat
 	// 98498081 spider
 
-	// runGetMovie(client, "19727887")
-	// runCreateMovie(client, "isbn", "Batman")
-	// runUpdateMovie(client, "19727887", "isbn2", "Dark Knight")
-	runGetMovies(client)
-	runDeleteMovie(client, "19727887")
+	// runGetMovie(client, "5366554")
+	// runCreateMovie(client, "isbn3", "Iron Man")
+	// runCreateMovie(client, "isbn222", "Thor")
+	// runCreateMovie(client, "spideeey", "Spider man")
+	// runUpdateMovie(client, "5366554", "isbn4", "Spider man NEW")
+	// runGetMovies(client)
+	// runDeleteMovie(client, "7")
 	runGetMovies(client)
 
 }

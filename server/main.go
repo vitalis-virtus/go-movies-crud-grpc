@@ -1,11 +1,16 @@
 package main
 
+// package main
+// gRPC server
+
 import (
 	"context"
+	"errors"
 	"log"
 	"math/rand"
 	"net"
 	"strconv"
+	"time"
 
 	"google.golang.org/grpc"
 	pb "moviesapp.com/grpc/protos"
@@ -37,10 +42,10 @@ func main() {
 
 func (s *movieServer) GetMovies(in *pb.Empty,
 	stream pb.Movie_GetMoviesServer) error {
-	log.Printf("Received: %v", in)
+	log.Printf("Received GetAllMovies")
 	movies := models.GetMovies()
 	for _, movie := range movies {
-		if err := stream.Send(&pb.MovieInfo{Id: movie.Id, Isbn: movie.Isbn, Title: movie.Title}); err != nil {
+		if err := stream.Send(&pb.MovieInfo{Id: movie.GetMovieId(), Isbn: movie.Isbn, Title: movie.Title}); err != nil {
 			return err
 		}
 	}
@@ -50,23 +55,39 @@ func (s *movieServer) GetMovies(in *pb.Empty,
 
 func (s *movieServer) GetMovie(ctx context.Context,
 	in *pb.Id) (*pb.MovieInfo, error) {
-	log.Printf("Received: %v", in)
+	log.Printf("Received GetMovie with id: %v", in)
 
 	ID := in.GetValue()
 
 	movieDetails, _ := models.GetMovieById(ID)
 
-	res := &pb.MovieInfo{Id: movieDetails.Id, Isbn: movieDetails.Isbn, Title: movieDetails.Title}
+	if movieDetails.GetMovieId() == "" {
+		return nil, errors.New("No movie with such id")
+	}
+
+	res := &pb.MovieInfo{Id: movieDetails.GetMovieId(), Isbn: movieDetails.Isbn, Title: movieDetails.Title}
 
 	return res, nil
 }
 
 func (s *movieServer) CreateMovie(ctx context.Context,
 	in *pb.MovieInfo) (*pb.Id, error) {
-	log.Printf("Received: %v", in)
+	log.Printf("Received CreateMovie with MovieInfo: %v", in)
 
 	ID := pb.Id{}
-	ID.Value = strconv.Itoa(rand.Intn(100000000))
+
+	rand.Seed(time.Now().UnixNano())
+
+	for {
+		ID.Value = strconv.Itoa(rand.Intn(10000000000))
+
+		movieDetails, _ := models.GetMovieById(ID.Value)
+
+		if movieDetails.Id != ID.Value {
+			break
+		}
+
+	}
 
 	newMovie := &models.Movie{Id: ID.Value, Isbn: in.GetIsbn(), Title: in.GetTitle()}
 
@@ -77,7 +98,7 @@ func (s *movieServer) CreateMovie(ctx context.Context,
 
 func (s *movieServer) UpdateMovie(ctx context.Context,
 	in *pb.MovieInfo) (*pb.Status, error) {
-	log.Printf("Received: %v", in)
+	log.Printf("Received UpdateMovie with MovieInfo: %v", in)
 
 	ID := in.GetId()
 
@@ -104,7 +125,7 @@ func (s *movieServer) UpdateMovie(ctx context.Context,
 
 func (s *movieServer) DeleteMovie(ctx context.Context,
 	in *pb.Id) (*pb.Status, error) {
-	log.Printf("Received: %v", in)
+	log.Printf("Received DeleteMovie with id: %v", in)
 
 	res := pb.Status{}
 

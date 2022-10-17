@@ -1,6 +1,6 @@
 package config
 
-//packeage config
+//package config
 
 import (
 	"fmt"
